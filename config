@@ -1,4 +1,9 @@
 ngx_addon_name=ngx_http_lmdb_queue_module
 HTTP_MODULES="$HTTP_MODULES ngx_http_lmdb_queue_module"
-NGX_ADDON_SRCS="$NGX_ADDON_SRCS $ngx_addon_dir/src/ngx_http_lmdb_queue_module.cc"
 CORE_LIBS="$CORE_LIBS -lstdc++"
+
+LMDB_DEPS_SRC="$ngx_addon_dir/deps/lmdb/mdb.c $ngx_addon_dir/deps/lmdb/midl.c"
+LMDB_QUEUE_SRC="$ngx_addon_dir/src/env.cc $ngx_addon_dir/src/producer.cc $ngx_addon_dir/src/topic.cc"
+
+CFLAGS="$CFLAGS -I $ngx_addon_dir/deps"
+NGX_ADDON_SRCS="$NGX_ADDON_SRCS $ngx_addon_dir/src/ngx_http_lmdb_queue_module.cc $LMDB_DEPS_SRC $LMDB_QUEUE_SRC"

@@ -1,3 +1,8 @@
+#include <string>
+#include <stdio.h>
+
+std::string queue_path;
+
 extern "C" {
 	#include <ngx_config.h>
 	#include <ngx_core.h>
@@ -11,7 +16,7 @@ extern "C" {
 	/* Directives */
 	static ngx_command_t ngx_http_lmdb_queue_commands[] = {
 		{ ngx_string("lmdb_queue"),
-		  NGX_HTTP_MAIN_CONF | NGX_CONF_TAKE2,
+		  NGX_HTTP_MAIN_CONF | NGX_CONF_TAKE1,
 		  ngx_http_lmdb_queue,
 		  NGX_HTTP_MAIN_CONF_OFFSET,
 		  0,
@@ -61,7 +66,16 @@ extern "C" {
 	};
 
 	static char *ngx_http_lmdb_queue(ngx_conf_t *cf, ngx_command_t *cmd, void *conf) {
-		return NGX_CONF_OK;
+		ngx_str_t *args = (ngx_str_t*)cf->args->elts;
+		const char* path = (const char*)args[1].data;
+		int res = mkdir(path, 0666);
+		if (res == 0 || errno == EEXIST) {
+			queue_path = path;
+			return NGX_CONF_OK;
+		} else {
+			ngx_conf_log_error(NGX_LOG_EMERG, cf, 0, strerror(errno), args[1]);
+			return (char*)NGX_CONF_ERROR;
+		}
 	}
 	
 	static char *ngx_http_lmdb_queue_topic(ngx_conf_t *cf, ngx_command_t *cmd, void *conf) {

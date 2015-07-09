@@ -45,7 +45,7 @@ extern "C" {
 		NULL  /* merge location configuration */
 	};
 
-	ngx_module_t  ngx_http_lmdb_queue_module = {
+	ngx_module_t ngx_http_lmdb_queue_module = {
 	    NGX_MODULE_V1,
 	    &ngx_http_lmdb_queue_module_ctx,       /* module context */
 	    ngx_http_lmdb_queue_commands,          /* module directives */

@@ -61,7 +61,7 @@ extern "C" {
 	};
 
 	static char *ngx_http_lmdb_queue(ngx_conf_t *cf, ngx_command_t *cmd, void *conf) {
-		return NGX_CONF_OK
+		return NGX_CONF_OK;
 	}
 	
 	static char *ngx_http_lmdb_queue_topic(ngx_conf_t *cf, ngx_command_t *cmd, void *conf) {

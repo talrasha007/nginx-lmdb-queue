@@ -21,7 +21,12 @@ extern "C" {
 	static char *ngx_http_lmdb_queue(ngx_conf_t *cf, ngx_command_t *cmd, void *conf); // Declare lmdb_queue
 	static char *ngx_http_lmdb_queue_topic(ngx_conf_t *cf, ngx_command_t *cmd, void *conf); // Declare lmdb_queue topic
 	static char *ngx_http_lmdb_queue_push(ngx_conf_t *cf, ngx_command_t *cmd, void *conf); // Declare lmdb_queue topic
-	
+
+	/* Filter */
+	ngx_http_output_body_filter_pt ngx_http_next_body_filter;
+	static ngx_int_t ngx_http_lmdb_queue_filter_init(ngx_conf_t *cf);
+	static ngx_int_t ngx_http_lmdb_queue_body_filter(ngx_http_request_t *r, ngx_chain_t *in);
+
 	/* Directives */
 	static ngx_command_t ngx_http_lmdb_queue_commands[] = {
 		{ ngx_string("lmdb_queue"),
@@ -47,7 +52,7 @@ extern "C" {
 
 	static ngx_http_module_t ngx_http_lmdb_queue_module_ctx = {
 		NULL, /* preconfiguration */
-		NULL, /* postconfiguration */
+		ngx_http_lmdb_queue_filter_init, /* postconfiguration */
 		
 		NULL, /* create main configuration */
 		NULL, /* init main configuration */
@@ -178,5 +183,16 @@ extern "C" {
 		locconf->producer = producerIter->second.get();
 
 		return NGX_CONF_OK;
+	}
+
+	static ngx_int_t ngx_http_lmdb_queue_filter_init(ngx_conf_t *cf) {
+	    ngx_http_next_body_filter = ngx_http_top_body_filter;
+	    ngx_http_top_body_filter = ngx_http_lmdb_queue_body_filter;
+		
+		return NGX_OK;	
+	}
+	
+	static ngx_int_t ngx_http_lmdb_queue_body_filter(ngx_http_request_t *r, ngx_chain_t *in) {
+		return ngx_http_next_body_filter(r, in);
 	}
 }

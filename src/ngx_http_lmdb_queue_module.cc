@@ -53,24 +53,39 @@ extern "C" {
 		NULL, /* create server configuration */
 		NULL, /* merge server configuration */
 		
-		NULL, /* create location configuration */
+		ngx_http_lmdb_queue_create_loc_conf, /* create location configuration */
 		NULL  /* merge location configuration */
 	};
 
 	ngx_module_t ngx_http_lmdb_queue_module = {
-	    NGX_MODULE_V1,
-	    &ngx_http_lmdb_queue_module_ctx,       /* module context */
-	    ngx_http_lmdb_queue_commands,          /* module directives */
-	    NGX_HTTP_MODULE,                       /* module type */
-	    NULL,                                  /* init master */
-	    NULL,                                  /* init module */
-	    NULL,                                  /* init process */
-	    NULL,                                  /* init thread */
-	    NULL,                                  /* exit thread */
-	    NULL,                                  /* exit process */
-	    NULL,                                  /* exit master */
-	    NGX_MODULE_V1_PADDING
+		NGX_MODULE_V1,
+		&ngx_http_lmdb_queue_module_ctx,       /* module context */
+		ngx_http_lmdb_queue_commands,          /* module directives */
+		NGX_HTTP_MODULE,                       /* module type */
+		NULL,                                  /* init master */
+		NULL,                                  /* init module */
+		NULL,                                  /* init process */
+		NULL,                                  /* init thread */
+		NULL,                                  /* exit thread */
+		NULL,                                  /* exit process */
+		NULL,                                  /* exit master */
+		NGX_MODULE_V1_PADDING
 	};
+	
+	struct ngx_http_lmdb_queue_loc_conf {
+		char data_type[64];
+		Producer* producer;
+	};
+	
+	static void *ngx_http_lmdb_queue_create_loc_conf(ngx_conf_t *cf) {
+		ngx_http_lmdb_queue_loc_conf *conf = ngx_pcalloc(cf->pool, sizeof(ngx_http_lmdb_queue_loc_conf));
+		if (conf == NULL) {
+			return NGX_CONF_ERROR;
+		}
+		
+		ngx_memzero(conf, sizeof(ngx_http_lmdb_queue_loc_conf));
+		return conf;
+	}
 
 	static char *ngx_http_lmdb_queue(ngx_conf_t *cf, ngx_command_t *cmd, void *conf) {
 		ngx_str_t *args = (ngx_str_t*)cf->args->elts;
@@ -130,7 +145,7 @@ extern "C" {
 		auto &ptr = producers[name];
 		if (ptr.get()) {
 			ngx_conf_log_error(NGX_LOG_EMERG, cf, 0, "Topic already decalred.", args[2]);
-			return (char*)NGX_CONF_ERROR;			
+			return (char*)NGX_CONF_ERROR;
 		}
 		
 		TopicOpt qopt = { chunkSize, chunksToKeep };
@@ -140,6 +155,26 @@ extern "C" {
 	}
 	
 	static char *ngx_http_lmdb_queue_push(ngx_conf_t *cf, ngx_command_t *cmd, void *conf) {
+		ngx_str_t *args = (ngx_str_t*)cf->args->elts;
+
+		const char *topic = (const char*)args[1].data;
+		const char *type = (const char*)args[2].data;
+		auto producerIter = producers.find(topic);
+		
+		if (producerIter == producers.end()) {
+			ngx_conf_log_error(NGX_LOG_EMERG, cf, 0, "Topic not exists.", args[1]);
+			return (char*)NGX_CONF_ERROR;
+		}
+		
+		if (strcmp(type, "headers") != 0 && strcmp(type, "headers_and_reqbody") != 0) {
+			ngx_conf_log_error(NGX_LOG_EMERG, cf, 0, "Queue data type error(headers|headers_and_reqbody).", args[2]);
+			return (char*)NGX_CONF_ERROR;
+		}
+		
+		ngx_http_lmdb_queue_loc_conf *locconf = (ngx_http_lmdb_queue_loc_conf*)conf;
+		strcpy(locconf.data_type, type);
+		locconf.producer = producerIter->second;
+
 		return NGX_CONF_OK;
 	}
 }

@@ -24,8 +24,8 @@ extern "C" {
 
 	/* Filter */
 	ngx_http_output_body_filter_pt ngx_http_next_body_filter;
-	static ngx_int_t ngx_http_lmdb_queue_filter_init(ngx_conf_t *cf);
-	static ngx_int_t ngx_http_lmdb_queue_body_filter(ngx_http_request_t *r, ngx_chain_t *in);
+	static ngx_int_t ngx_http_lmdb_queue_handler_init(ngx_conf_t *cf);
+	static ngx_int_t ngx_http_lmdb_queue_handler(ngx_http_request_t *r);
 
 	/* Directives */
 	static ngx_command_t ngx_http_lmdb_queue_commands[] = {
@@ -52,7 +52,7 @@ extern "C" {
 
 	static ngx_http_module_t ngx_http_lmdb_queue_module_ctx = {
 		NULL, /* preconfiguration */
-		ngx_http_lmdb_queue_filter_init, /* postconfiguration */
+		ngx_http_lmdb_queue_handler_init, /* postconfiguration */
 		
 		NULL, /* create main configuration */
 		NULL, /* init main configuration */
@@ -185,14 +185,18 @@ extern "C" {
 		return NGX_CONF_OK;
 	}
 
-	static ngx_int_t ngx_http_lmdb_queue_filter_init(ngx_conf_t *cf) {
-	    ngx_http_next_body_filter = ngx_http_top_body_filter;
-	    ngx_http_top_body_filter = ngx_http_lmdb_queue_body_filter;
-		
+	static ngx_int_t ngx_http_lmdb_queue_handler_init(ngx_conf_t *cf) {
+		ngx_http_core_main_conf_t *cmcf = ngx_http_conf_get_module_main_conf(cf, ngx_http_core_module);
+		ngx_http_handler_pt *h = ngx_array_push(&cmcf->phases[NGX_HTTP_LOG_PHASE].handlers);
+		if (h == NULL) {
+			return NGX_ERROR;
+		}
+
+		*h = ngx_http_lmdb_queue_handler;
 		return NGX_OK;	
 	}
 	
-	static ngx_int_t ngx_http_lmdb_queue_body_filter(ngx_http_request_t *r, ngx_chain_t *in) {
-		return ngx_http_next_body_filter(r, in);
+	static ngx_int_t ngx_http_lmdb_queue_handler(ngx_http_request_t *r) {
+		return NGX_OK;
 	}
 }

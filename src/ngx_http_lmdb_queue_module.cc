@@ -37,7 +37,7 @@ extern "C" {
 		  0,
 		  NULL },
 		{ ngx_string("lmdb_queue_push"),
-		  NGX_HTTP_SRV_CONF | NGX_HTTP_LOC_CONF | NGX_CONF_TAKE1,
+		  NGX_HTTP_SRV_CONF | NGX_HTTP_LOC_CONF | NGX_CONF_TAKE2,
 		  ngx_http_lmdb_queue_push,
 		  NGX_HTTP_LOC_CONF_OFFSET,
 		  0,

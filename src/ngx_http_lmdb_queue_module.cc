@@ -14,6 +14,8 @@ extern "C" {
 	#include <ngx_config.h>
 	#include <ngx_core.h>
 	#include <ngx_http.h>
+
+	static void *ngx_http_lmdb_queue_create_loc_conf(ngx_conf_t *cf);
 	
 	/* Directive handlers */
 	static char *ngx_http_lmdb_queue(ngx_conf_t *cf, ngx_command_t *cmd, void *conf); // Declare lmdb_queue
@@ -78,7 +80,7 @@ extern "C" {
 	};
 	
 	static void *ngx_http_lmdb_queue_create_loc_conf(ngx_conf_t *cf) {
-		ngx_http_lmdb_queue_loc_conf *conf = ngx_pcalloc(cf->pool, sizeof(ngx_http_lmdb_queue_loc_conf));
+		ngx_http_lmdb_queue_loc_conf *conf = (ngx_http_lmdb_queue_loc_conf*)ngx_pcalloc(cf->pool, sizeof(ngx_http_lmdb_queue_loc_conf));
 		if (conf == NULL) {
 			return NGX_CONF_ERROR;
 		}
@@ -172,8 +174,8 @@ extern "C" {
 		}
 		
 		ngx_http_lmdb_queue_loc_conf *locconf = (ngx_http_lmdb_queue_loc_conf*)conf;
-		strcpy(locconf.data_type, type);
-		locconf.producer = producerIter->second;
+		strcpy(locconf->data_type, type);
+		locconf->producer = producerIter->second.get();
 
 		return NGX_CONF_OK;
 	}

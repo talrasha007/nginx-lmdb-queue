@@ -83,7 +83,6 @@ extern "C" {
 	};
 	
 	struct ngx_http_lmdb_queue_loc_conf {
-		char data_type[64];
 		Producer* producer;
 		
 		size_t data_format_len;

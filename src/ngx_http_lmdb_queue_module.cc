@@ -191,9 +191,10 @@ extern "C" {
 				ngx_str_t varName { size_t(s - varCur), varCur };
 				ngx_int_t idx = ngx_http_get_variable_index(cf, &varName);
 				if (idx == NGX_ERROR) {
-					ngx_conf_log_error(NGX_LOG_EMERG, cf, 0, "Var name '$%V' error.", &varName);
 					return (char*)NGX_CONF_ERROR;
-				}				
+				}
+				
+				varIndexes.push_back(idx);				
 			}
 			
 			if (*s != '$' && s < end) {

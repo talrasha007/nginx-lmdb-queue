@@ -1,3 +1,4 @@
+#include <regex>
 #include <string>
 #include <memory>
 #include <map>
@@ -82,6 +83,10 @@ extern "C" {
 	struct ngx_http_lmdb_queue_loc_conf {
 		char data_type[64];
 		Producer* producer;
+		
+		char data_format[1024 * 8];
+		size_t vars_count;
+		ngx_int_t* vars;		
 	};
 	
 	static void *ngx_http_lmdb_queue_create_loc_conf(ngx_conf_t *cf) {

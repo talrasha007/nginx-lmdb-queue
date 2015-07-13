@@ -102,7 +102,7 @@ extern "C" {
 			queue_path = path;
 			return NGX_CONF_OK;
 		} else {
-			ngx_conf_log_error(NGX_LOG_EMERG, cf, 0, strerror(errno), args[1]);
+			ngx_conf_log_error(NGX_LOG_EMERG, cf, 0, "%V %s", &args[1], strerror(errno));
 			return (char*)NGX_CONF_ERROR;
 		}
 	}
@@ -114,7 +114,7 @@ extern "C" {
 		const char *chunkSizeStr = (const char*)args[2].data;
 		size_t chunkSize = strtoull(chunkSizeStr, NULL, 10);
 		if (chunkSize == ULLONG_MAX) {
-			ngx_conf_log_error(NGX_LOG_EMERG, cf, 0, strerror(errno), args[2]);
+			ngx_conf_log_error(NGX_LOG_EMERG, cf, 0, "%V %s", &args[2], strerror(errno));
 			return (char*)NGX_CONF_ERROR;			
 		}
 		
@@ -129,34 +129,31 @@ extern "C" {
 				chunkSize *= 1024 * 1024 * 1024;
 				break;
 			default:
-				ngx_conf_log_error(NGX_LOG_EMERG, cf, 0, "Invalid topic chunk size unit(should be m|g).", args[2]);
+				ngx_conf_log_error(NGX_LOG_EMERG, cf, 0, "%V: Invalid topic chunk size unit(should be m|g).", &args[2]);
 				return (char*)NGX_CONF_ERROR;
 		}
 		
 		if (chunkSize < 64 * 1024 * 1024 || chunkSize > size_t(64) * 1024 * 1024 * 1024) {
-			ngx_conf_log_error(NGX_LOG_EMERG, cf, 0, "Invalid topic chunk size unit(should between 64MB and 64GB).", args[2]);
+			ngx_conf_log_error(NGX_LOG_EMERG, cf, 0, "%V: Invalid topic chunk size unit(should between 64MB and 64GB).", &args[2]);
 			return (char*)NGX_CONF_ERROR;
 		}
 		
 		size_t chunksToKeep = strtoull((const char*)args[3].data, NULL, 10);
 		if (chunksToKeep == ULLONG_MAX) {
-			ngx_conf_log_error(NGX_LOG_EMERG, cf, 0, strerror(errno), args[2]);
+			ngx_conf_log_error(NGX_LOG_EMERG, cf, 0, "%V: %s", &args[2], strerror(errno));
 			return (char*)NGX_CONF_ERROR;			
 		}
 		if (chunksToKeep < 4) {
-			ngx_conf_log_error(NGX_LOG_EMERG, cf, 0, "You should keep at least 4 chunks.", args[2]);
+			ngx_conf_log_error(NGX_LOG_EMERG, cf, 0, "%V: You should keep at least 4 chunks.", &args[3]);
 			return (char*)NGX_CONF_ERROR;
 		}
 		
 		//printf("Args: %s %zu %zu", name, chunkSize, chunksToKeep);
 		auto &ptr = producers[name];
-		if (ptr.get()) {
-			ngx_conf_log_error(NGX_LOG_EMERG, cf, 0, "Topic already decalred.", args[2]);
-			return (char*)NGX_CONF_ERROR;
+		if (ptr.get() == NULL) {
+			TopicOpt qopt = { chunkSize, chunksToKeep };
+			ptr.reset(new Producer(queue_path, name, &qopt));
 		}
-		
-		TopicOpt qopt = { chunkSize, chunksToKeep };
-		ptr.reset(new Producer(queue_path, name, &qopt));
 		
 		return NGX_CONF_OK;
 	}
@@ -169,12 +166,12 @@ extern "C" {
 		auto producerIter = producers.find(topic);
 		
 		if (producerIter == producers.end()) {
-			ngx_conf_log_error(NGX_LOG_EMERG, cf, 0, "Topic not exists.", args[1]);
+			ngx_conf_log_error(NGX_LOG_EMERG, cf, 0, "Topic '%V' not exists.", &args[1]);
 			return (char*)NGX_CONF_ERROR;
 		}
 		
 		if (strcmp(type, "headers") != 0 && strcmp(type, "headers_and_reqbody") != 0) {
-			ngx_conf_log_error(NGX_LOG_EMERG, cf, 0, "Queue data type error(headers|headers_and_reqbody).", args[2]);
+			ngx_conf_log_error(NGX_LOG_EMERG, cf, 0, "Queue data type '%V' error(headers|headers_and_reqbody).", &args[2]);
 			return (char*)NGX_CONF_ERROR;
 		}
 		

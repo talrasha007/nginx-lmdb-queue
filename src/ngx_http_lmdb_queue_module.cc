@@ -1,6 +1,5 @@
 #include <algorithm>
 #include <vector>
-#include <regex>
 #include <string>
 #include <memory>
 #include <map>
@@ -86,7 +85,7 @@ extern "C" {
 		Producer* producer;
 		
 		size_t data_format_len;
-		char data_format[1024 * 8];
+		u_char data_format[1024 * 8];
 		
 		size_t vars_count;
 		ngx_int_t* vars;		
@@ -177,38 +176,33 @@ extern "C" {
 			return (char*)NGX_CONF_ERROR;
 		}
 		
-		const char *dataFormat = (const char*)args[2].data;
-		size_t dataFormatLen = args[2].len;
-		std::regex varReg("\\$([0-9a-zA-Z_]+)");
-		std::regex_iterator<const char*> rit (dataFormat, dataFormat + dataFormatLen, varReg);
-		std::regex_iterator<const char*> rend;
+		ngx_http_lmdb_queue_loc_conf *locconf = (ngx_http_lmdb_queue_loc_conf*)conf;
+		
 		std::vector<ngx_int_t> varIndexes;
+		u_char *end = args[2].data + args[2].len, *varCur = NULL, *outCur = locconf->data_format;
+		for (u_char *s = args[2].data; s < end;) {
+			if (*s == '$') {
+				varCur = ++s;
+				*outCur++ = '\1';
+				while (s < end && ((*s >= '0' && *s <= '9') || (s >= 'a' && s <= 'z') || (s >= 'A' && s <= 'Z') || s == '_')) {
+					++s;
+				}
 
-		while (rit != rend) {
-			std::string strName = (*rit)[1].str();
-			ngx_str_t varName;
-			varName.data = (u_char*)strName.c_str();
-			varName.len = strName.size();
-			
-			ngx_int_t idx = ngx_http_get_variable_index(cf, &varName);
-			if (idx == NGX_ERROR) {
-				ngx_conf_log_error(NGX_LOG_EMERG, cf, 0, "Var name '$%V' error.", &varName);
-				return (char*)NGX_CONF_ERROR;
+				ngx_str_t varName { size_t(s - varCur), varCur };
+				ngx_int_t idx = ngx_http_get_variable_index(cf, &varName);
+				if (idx == NGX_ERROR) {
+					ngx_conf_log_error(NGX_LOG_EMERG, cf, 0, "Var name '$%V' error.", &varName);
+					return (char*)NGX_CONF_ERROR;
+				}				
 			}
 			
-			varIndexes.push_back(idx);
-			++rit;
+			if (*s != '$' && s < end) {
+				*outCur++ = *s++;
+			}
 		}
 		
-		std::string zero("\0", 1), one("\1", 1);
-		std::string formatStr(dataFormat);
-		formatStr = std::regex_replace(formatStr, varReg, one);
-		formatStr = std::regex_replace(formatStr, std::regex("\\0"), zero);
-
-		ngx_http_lmdb_queue_loc_conf *locconf = (ngx_http_lmdb_queue_loc_conf*)conf;
+		locconf->data_format_len = size_t(outCur - locconf->data_format);
 		locconf->producer = producerIter->second.get();
-		locconf->data_format_len = formatStr.size();
-		strcpy(locconf->data_format, formatStr.c_str());
 		locconf->vars_count = varIndexes.size();
 		locconf->vars = (ngx_int_t*)ngx_pcalloc(cf->pool, varIndexes.size() * sizeof(ngx_int_t));
 		std::copy(varIndexes.begin(), varIndexes.end(), locconf->vars);

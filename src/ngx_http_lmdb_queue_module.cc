@@ -187,7 +187,7 @@ extern "C" {
 		while (rit != rend) {
 			std::string strName = (*rit)[1].str();
 			ngx_str_t varName;
-			varName.data = strName.c_str();
+			varName.data = (u_char*)strName.c_str();
 			varName.len = strName.size();
 			
 			ngx_int_t idx = ngx_http_get_variable_index(cf, &varName);
@@ -200,9 +200,11 @@ extern "C" {
 			++rit;
 		}
 		
-		std::string formatStr = std::regex_replace(dataFormat, e, "\1");
-		formatStr = std::regex_replace(formatStr, std::regex("\\0"), "\0");
-		
+		std::string zero("\0", 1), one("\1", 1);
+		std::string formatStr(dataFormat);
+		formatStr = std::regex_replace(formatStr, varReg, one);
+		formatStr = std::regex_replace(formatStr, std::regex("\\0"), zero);
+
 		ngx_http_lmdb_queue_loc_conf *locconf = (ngx_http_lmdb_queue_loc_conf*)conf;
 		locconf->producer = producerIter->second.get();
 		locconf->data_format_len = formatStr.size();

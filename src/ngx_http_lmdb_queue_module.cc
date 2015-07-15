@@ -223,7 +223,7 @@ extern "C" {
 	}
 	
 	static ngx_int_t ngx_http_lmdb_queue_handler(ngx_http_request_t *r) {
-		ngx_http_lmdb_queue_loc_conf *lcf = (ngx_http_lmdb_queue_loc_conf*)ngx_http_get_module_loc_conf(r, ngx_http_accesskey_module);
+		ngx_http_lmdb_queue_loc_conf *lcf = (ngx_http_lmdb_queue_loc_conf*)ngx_http_get_module_loc_conf(r, ngx_http_lmdb_queue_module);
 		if (lcf->producer == NULL) {
 			return NGX_OK;
 		}

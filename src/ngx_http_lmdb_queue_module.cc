@@ -275,7 +275,8 @@ extern "C" {
 		Producer::BatchType bt;
 		bt.push_back(std::make_tuple((char*)buf, resLen));
 		lcf->producer->push(bt);
-
+		
+		delete buf;
 		return NGX_OK;
 	}
 }

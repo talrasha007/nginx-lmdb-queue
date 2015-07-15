@@ -230,7 +230,7 @@ extern "C" {
 		
 		std::vector<ngx_http_variable_value_t*> vals;
 		size_t resLen = lcf->data_format_len;
-		for (int i = 0; i < lcf->vars_count; ++i) {
+		for (size_t i = 0; i < lcf->vars_count; ++i) {
 			ngx_http_variable_value_t *v = ngx_http_get_indexed_variable(r, lcf->vars[i]);
 			vals.push_back(v);
 			
@@ -259,8 +259,8 @@ extern "C" {
 		}
 		
 		Producer::BatchType bt;
-		bt.push_back(make_tuple((char*)buf, resLen));
-		lcf->producer.push(bt);
+		bt.push_back(std::make_tuple((char*)buf, resLen));
+		lcf->producer->push(bt);
 
 		return NGX_OK;
 	}

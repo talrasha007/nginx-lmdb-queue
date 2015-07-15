@@ -181,6 +181,20 @@ extern "C" {
 		std::vector<ngx_int_t> varIndexes;
 		u_char *end = args[2].data + args[2].len, *varCur = NULL, *outCur = locconf->data_format;
 		for (u_char *s = args[2].data; s < end;) {
+			if (*s == '\\' && s + 1 < end) {
+				if (*(s + 1) == '0') {
+					*outCur++ = 0;
+					s += 2;
+					continue;
+				}
+
+				if (*(s + 1) == '$' || *(s + 1) == '\\') {
+					*outCur++ = *(s + 1);
+					s += 2;
+					continue;
+				}
+			}
+			
 			if (*s == '$') {
 				varCur = ++s;
 				*outCur++ = '\1';

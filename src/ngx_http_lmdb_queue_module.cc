@@ -223,6 +223,45 @@ extern "C" {
 	}
 	
 	static ngx_int_t ngx_http_lmdb_queue_handler(ngx_http_request_t *r) {
+		ngx_http_lmdb_queue_loc_conf *lcf = (ngx_http_lmdb_queue_loc_conf*)ngx_http_get_module_loc_conf(r, ngx_http_accesskey_module);
+		if (lcf->producer == NULL) {
+			return NGX_OK;
+		}
+		
+		std::vector<ngx_http_variable_value_t*> vals;
+		size_t resLen = lcf->data_format_len;
+		for (int i = 0; i < lcf->vars_count; ++i) {
+			ngx_http_variable_value_t *v = ngx_http_get_indexed_variable(r, lcf->vars[i]);
+			vals.push_back(v);
+			
+			if (v && !v->not_found) {
+				resLen += (v->len - 1);
+			} else {
+				--resLen;
+			}
+		}
+		
+		u_char *formatCur = lcf->data_format, *formatEnd = lcf->data_format + lcf->data_format_len; 
+		u_char *buf = new u_char[resLen], *cur = buf;
+		auto valIter = vals.begin();
+		while (formatCur < formatEnd) {
+			if (*formatCur != '\1') {
+				*cur++ = *formatCur++;
+			} else {
+				++formatCur;
+				ngx_http_variable_value_t *v = *valIter++;
+				if (v && !v->not_found) {
+					for (u_char *src = v->data; src < v->data + v->len;) {
+						*cur++ = *src++;
+					}
+				}
+			}
+		}
+		
+		Producer::BatchType bt;
+		bt.push_back(make_tuple((char*)buf, resLen));
+		lcf->producer.push(bt);
+
 		return NGX_OK;
 	}
 }

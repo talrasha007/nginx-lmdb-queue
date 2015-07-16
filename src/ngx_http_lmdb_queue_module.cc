@@ -77,8 +77,8 @@ extern "C" {
 		NULL,                                  /* init process */
 		NULL,                                  /* init thread */
 		NULL,                                  /* exit thread */
-		NULL,                                  /* exit process */
-		lmdb_queue_on_exit_process,            /* exit master */
+		lmdb_queue_on_exit_process,            /* exit process */
+		NULL,                                  /* exit master */
 		NGX_MODULE_V1_PADDING
 	};
 	

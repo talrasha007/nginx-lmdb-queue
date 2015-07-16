@@ -273,7 +273,7 @@ extern "C" {
 			}
 		}
 		
-		lcf->producer->push(item);
+		lcf->producer->push(std::move(item));
 		return NGX_OK;
 	}
 }

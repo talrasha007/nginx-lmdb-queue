@@ -255,8 +255,9 @@ extern "C" {
 			}
 		}
 		
-		u_char *formatCur = lcf->data_format, *formatEnd = lcf->data_format + lcf->data_format_len; 
-		u_char *buf = new u_char[resLen], *cur = buf;
+		Producer::ItemType item = Producer::ItemType::create(resLen); 
+		u_char *formatCur = lcf->data_format, *formatEnd = lcf->data_format + lcf->data_format_len;
+		u_char *cur = (u_char*)item.data();
 		auto valIter = vals.begin();
 		while (formatCur < formatEnd) {
 			if (*formatCur != '\1') {
@@ -272,11 +273,7 @@ extern "C" {
 			}
 		}
 		
-		Producer::BatchType bt;
-		bt.push_back(std::make_tuple((char*)buf, resLen));
-		lcf->producer->push(bt);
-		
-		delete buf;
+		lcf->producer->push(item);
 		return NGX_OK;
 	}
 }

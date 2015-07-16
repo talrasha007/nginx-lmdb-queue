@@ -181,21 +181,7 @@ extern "C" {
 		
 		std::vector<ngx_int_t> varIndexes;
 		u_char *end = args[2].data + args[2].len, *varCur = NULL, *outCur = locconf->data_format;
-		for (u_char *s = args[2].data; s < end;) {
-			if (*s == '\\' && s + 1 < end) {
-				if (*(s + 1) == '0') {
-					*outCur++ = 0;
-					s += 2;
-					continue;
-				}
-
-				if (*(s + 1) == '$' || *(s + 1) == '\\') {
-					*outCur++ = *(s + 1);
-					s += 2;
-					continue;
-				}
-			}
-			
+		for (u_char *s = args[2].data; s < end;) {			
 			if (*s == '$') {
 				varCur = ++s;
 				*outCur++ = '\1';
@@ -209,12 +195,25 @@ extern "C" {
 					return (char*)NGX_CONF_ERROR;
 				}
 				
-				varIndexes.push_back(idx);				
+				varIndexes.push_back(idx);
+				continue;
 			}
 			
-			if (*s != '$' && s < end) {
-				*outCur++ = *s++;
-			}
+			if (*s == '\\' && s + 1 < end) {
+				if (*(s + 1) == '0') {
+					*outCur++ = 0;
+					s += 2;
+					continue;
+				}
+
+				if (*(s + 1) == '$' || *(s + 1) == '\\') {
+					*outCur++ = *(s + 1);
+					s += 2;
+					continue;
+				}
+			}			
+			
+			*outCur++ = *s++;
 		}
 		
 		locconf->data_format_len = size_t(outCur - locconf->data_format);

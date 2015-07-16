@@ -39,6 +39,7 @@ Producer::Producer(const string& root, const string& topic, TopicOpt* opt) : _to
 }
 
 Producer::~Producer() {
+    flush();
     closeCurrent();
 }
 
@@ -102,8 +103,10 @@ void Producer::flush() {
 
 void Producer::flushImpl() {
     _lastFlush = chrono::steady_clock::now();
-    push(_cache);
-    _cache.clear();
+    if (_cache.size() > 0) {
+        push(_cache);
+        _cache.clear();
+    }
 }
 
 void Producer::closeCurrent() {

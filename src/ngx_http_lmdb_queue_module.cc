@@ -18,6 +18,7 @@ extern "C" {
 	#include <ngx_http.h>
 
 	static void *ngx_http_lmdb_queue_create_loc_conf(ngx_conf_t *cf);
+	static void lmdb_queue_on_exit_process(ngx_cycle_t *cycle);
 	
 	/* Directive handlers */
 	static char *ngx_http_lmdb_queue(ngx_conf_t *cf, ngx_command_t *cmd, void *conf); // Declare lmdb_queue
@@ -77,7 +78,7 @@ extern "C" {
 		NULL,                                  /* init thread */
 		NULL,                                  /* exit thread */
 		NULL,                                  /* exit process */
-		NULL,                                  /* exit master */
+		lmdb_queue_on_exit_process,            /* exit master */
 		NGX_MODULE_V1_PADDING
 	};
 	
@@ -275,5 +276,9 @@ extern "C" {
 		
 		lcf->producer->push(std::move(item));
 		return NGX_OK;
+	}
+	
+	void lmdb_queue_on_exit_process(ngx_cycle_t*) {
+		producers.clear();
 	}
 }

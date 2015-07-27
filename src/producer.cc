@@ -45,8 +45,10 @@ Producer::Producer(const string& root, const string& topic, TopicOpt* opt, bool 
 Producer::~Producer() {
     if (_bgEnabled) {
         _bgRunning = false;
-        unique_lock<mutex> lck(_flushMtx);
-        _bgCv.notify_one();
+        {
+            unique_lock<mutex> lck(_flushMtx);
+            _bgCv.notify_one();
+        }
         _bgFlush.join();
     } else {
         flush();

@@ -9,6 +9,7 @@
 
 #include "producer.h"
 
+bool is_worker = false;
 std::string queue_path;
 std::map<std::string, std::unique_ptr<Producer> > producers;
 
@@ -162,6 +163,11 @@ extern "C" {
 		if (ptr.get() == NULL) {
 			TopicOpt qopt = { chunkSize, chunksToKeep };
 			ptr.reset(new Producer(queue_path, name, &qopt));
+			if (is_worker) {
+				ptr->enableBackgroundFlush();
+			} else {
+				ptr.reset(nullptr);
+			}
 		}
 		
 		return NGX_CONF_OK;
@@ -279,10 +285,7 @@ extern "C" {
 	}
 	
 	ngx_int_t lmdb_queue_on_init_process(ngx_cycle_t*) {
-		for (auto &producer : producers) {
-			producer.second->enableBackgroundFlush();
-		}
-
+		is_worker = true;
 		return NGX_OK;
 	}
 	

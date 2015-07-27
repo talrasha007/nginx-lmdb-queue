@@ -18,6 +18,7 @@ extern "C" {
 	#include <ngx_http.h>
 
 	static void *ngx_http_lmdb_queue_create_loc_conf(ngx_conf_t *cf);
+	static ngx_int_t lmdb_queue_on_init_process(ngx_cycle_t*);
 	static void lmdb_queue_on_exit_process(ngx_cycle_t *cycle);
 	
 	/* Directive handlers */
@@ -74,7 +75,7 @@ extern "C" {
 		NGX_HTTP_MODULE,                       /* module type */
 		NULL,                                  /* init master */
 		NULL,                                  /* init module */
-		NULL,                                  /* init process */
+		lmdb_queue_on_init_process,            /* init process */
 		NULL,                                  /* init thread */
 		NULL,                                  /* exit thread */
 		lmdb_queue_on_exit_process,            /* exit process */
@@ -272,8 +273,16 @@ extern "C" {
 				}
 			}
 		}
-		
-		lcf->producer->push(std::move(item));
+
+		lcf->producer->push2Cache(std::move(item));
+		return NGX_OK;
+	}
+	
+	ngx_int_t lmdb_queue_on_init_process(ngx_cycle_t*) {
+		for (auto &producer : producers) {
+			producer.second->enableBackgroundFlush();
+		}
+
 		return NGX_OK;
 	}
 	

@@ -160,7 +160,7 @@ extern "C" {
 		auto &ptr = producers[name];
 		if (ptr.get() == NULL) {
 			TopicOpt qopt = { chunkSize, chunksToKeep };
-			ptr.reset(new Producer(queue_path, name, &qopt));
+			ptr.reset(new Producer(queue_path, name, &qopt, true));
 		}
 		
 		return NGX_CONF_OK;
@@ -255,7 +255,7 @@ extern "C" {
 			}
 		}
 		
-		Producer::ItemType item = Producer::ItemType::create(resLen); 
+		Producer::ItemType item = Producer::ItemType::create(resLen);
 		u_char *formatCur = lcf->data_format, *formatEnd = lcf->data_format + lcf->data_format_len;
 		u_char *cur = (u_char*)item.data();
 		auto valIter = vals.begin();

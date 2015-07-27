@@ -161,7 +161,7 @@ extern "C" {
 		auto &ptr = producers[name];
 		if (ptr.get() == NULL) {
 			TopicOpt qopt = { chunkSize, chunksToKeep };
-			ptr.reset(new Producer(queue_path, name, &qopt, true));
+			ptr.reset(new Producer(queue_path, name, &qopt));
 		}
 		
 		return NGX_CONF_OK;
